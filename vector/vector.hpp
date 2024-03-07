@@ -27,7 +27,7 @@ template <typename T>
       return *this;
     }
 
-    std::optional<OwningSpan<T>> resized(const std::size_t size) {
+    std::optional<OwningSpan<T>> resized(const std::size_t size) const {
       if (T *tmp = new (std::nothrow) T[size]; tmp != nullptr) [[likely]] {
         // copy on successful allocation
         std::memcpy(tmp, _data.data(), _size * sizeof(T));
@@ -40,13 +40,19 @@ template <typename T>
     T * begin() {
       return _data.data();
     }
+
     T * end() {
       return _data.data() + _size;
     }
 
-    std::size_t size() const {return _size; }
-    std::size_t capacity() const {return _data.size(); }
+    std::size_t size() const noexcept {return _size; }
+    std::size_t capacity() const noexcept {return _data.size(); }
     T& operator[](std::size_t i) { return _data[i]; }
+    const T operator[](std::size_t i) const { return _data[i]; }
+
+    bool operator<(const Vector<T> &other) const noexcept {
+      return _size < other._size || (_size == other._size && _data < other._data);
+    }
   };
 
 #endif // __vector_hpp__

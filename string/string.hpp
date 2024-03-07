@@ -20,6 +20,15 @@ struct String : Vector<char> {
       return 0;
     }
   };
+
+  String operator+(const String &other) const noexcept {
+    String tmp {_size + other._size};
+
+    std::memcpy(tmp._data.data(), _data.data(), _size);
+    std::memcpy(tmp._data.data() + _size, other._data.data(), other._size);
+
+    return tmp;
+  }
 };
 
 using StringView = Span<char>;

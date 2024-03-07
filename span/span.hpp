@@ -40,7 +40,8 @@ template <typename T>
     }
 
     T* data() { return _data.get(); }
-    std::size_t size() { return _size; }
+    const T* data() const { return _data.get(); }
+    std::size_t size() const { return _size; }
     T &operator[](std::size_t i) { return _data.get()[i]; }
 
     OwningSpan(OwningSpan &&other) noexcept {
@@ -62,6 +63,10 @@ template <typename T>
       std::swap(_data, other._data);
       std::swap(_size, other._size);
       return *this;
+    }
+
+    bool operator<(const OwningSpan<T> &other) const noexcept {
+      return std::memcmp(_data.get(), other._data.get(), std::min(_size, other._size)) < 0;
     }
 
     ~OwningSpan() noexcept = default;
