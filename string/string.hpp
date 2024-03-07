@@ -37,8 +37,8 @@ namespace mr {
       return tmp;
     }
   };
-}
 
-using StringView = Span<char>;
+  using StringView = Span<char>;
+}
 
 #endif // __string_hpp__
