@@ -32,7 +32,7 @@ template <typename T>
       return *this;
     }
 
-    std::optional<OwningSpan<T>> resized(const std::size_t size) const {
+    std::optional<OwningSpan<T>> resized(const std::size_t size) const noexcept {
       if (T *tmp = new (std::nothrow) T[size]; tmp != nullptr) [[likely]] {
         // copy on successful allocation
         std::memcpy(tmp, _data.data(), _size * sizeof(T));
@@ -42,11 +42,19 @@ template <typename T>
       return std::nullopt;
     }
 
-    T * begin() {
+    const T * cbegin() const noexcept {
       return _data.data();
     }
 
-    T * end() {
+    const T * cend() const noexcept {
+      return _data.data() + _size;
+    }
+
+    T * begin() noexcept {
+      return _data.data();
+    }
+
+    T * end() noexcept {
       return _data.data() + _size;
     }
 

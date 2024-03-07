@@ -39,9 +39,9 @@ template <typename T>
       _size = size;
     }
 
-    T* data() { return _data.get(); }
-    const T* data() const { return _data.get(); }
-    std::size_t size() const { return _size; }
+    T* data() noexcept { return _data.get(); }
+    const T* data() const noexcept { return _data.get(); }
+    std::size_t size() const noexcept { return _size; }
     T &operator[](std::size_t i) { return _data.get()[i]; }
 
     OwningSpan(OwningSpan &&other) noexcept {
