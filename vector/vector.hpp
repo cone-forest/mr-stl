@@ -10,12 +10,17 @@ template <typename T>
     OwningSpan<T> _data = {};
 
     Vector() noexcept = default;
+    ~Vector() noexcept = default;
 
     template <typename ...Args> requires (std::is_constructible_v<T, Args> && ...)
       Vector(Args... args) : _data(static_cast<T>(args)...), _size(sizeof...(args)) {}
 
     Vector(const T *data, std::size_t size) :
       _data(data, size), _size(size) {}
+
+    // move semantic
+    Vector(Vector &&other) noexcept = default;
+    Vector & operator=(Vector &&other) noexcept = default;
 
     template <typename ...Args>
       requires (std::is_constructible_v<T, Args...>)

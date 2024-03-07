@@ -9,6 +9,12 @@ struct String : Vector<char> {
     String(Args... args) : Vector<char>(args...) {}
   String(const char *str) : Vector<char>(str, strlen(str)) {}
 
+  // move semantic
+  String(String &&other) noexcept = default;
+  String & operator=(String &&other) noexcept = default;
+
+  ~String() noexcept = default;
+
   struct Hash {
     std::size_t operator()(const String &s){
       // pick 5 characters and sum them up
