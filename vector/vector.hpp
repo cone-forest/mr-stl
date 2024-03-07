@@ -6,7 +6,8 @@
 
 namespace mr {
   template <typename T>
-    struct Vector {
+    struct Vector : FlatRangeMethods<Vector, T>,
+                    RangeOutputOperators<Vector, T> {
       std::size_t _size = 0;
       OwningSpan<T> _data = {};
 
@@ -43,22 +44,8 @@ namespace mr {
         return std::nullopt;
       }
 
-      const T * cbegin() const noexcept {
-        return _data.data();
-      }
-
-      const T * cend() const noexcept {
-        return _data.data() + _size;
-      }
-
-      T * begin() noexcept {
-        return _data.data();
-      }
-
-      T * end() noexcept {
-        return _data.data() + _size;
-      }
-
+      T * data() noexcept {return _data.data(); }
+      const T * data() const noexcept {return _data.data(); }
       std::size_t size() const noexcept {return _size; }
       std::size_t capacity() const noexcept {return _data.size(); }
       T& operator[](std::size_t i) { return _data[i]; }

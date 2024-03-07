@@ -8,7 +8,8 @@ namespace mr {
     using Span = std::span<T>;
 
   template <typename T>
-    struct OwningSpan {
+    struct OwningSpan : FlatRangeMethods<OwningSpan, T>,
+                        RangeOutputOperators<OwningSpan, T> {
       std::size_t _size = 0;
       std::unique_ptr<T> _data {};
 
