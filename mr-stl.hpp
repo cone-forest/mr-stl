@@ -6,5 +6,6 @@
 #include "vector/vector.hpp"
 #include "string/string.hpp"
 #include "hashmap/hashmap.hpp"
+#include "graph/graph.hpp"
 
 #endif // __mr_stl_hpp__

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <optional>
 #include <iostream>
+#include <algorithm>
 #include <memory>
 
 namespace mr {
