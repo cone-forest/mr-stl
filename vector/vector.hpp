@@ -44,12 +44,13 @@ namespace mr {
         return std::nullopt;
       }
 
+      // getters
       T * data() noexcept {return _data.data(); }
       const T * data() const noexcept {return _data.data(); }
       std::size_t size() const noexcept {return _size; }
       std::size_t capacity() const noexcept {return _data.size(); }
       T& operator[](std::size_t i) { return _data[i]; }
-      const T operator[](std::size_t i) const { return _data[i]; }
+      T operator[](std::size_t i) const { return _data[i]; }
 
       bool operator<(const Vector<T> &other) const noexcept {
         return _size < other._size || (_size == other._size && _data < other._data);
