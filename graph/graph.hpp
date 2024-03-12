@@ -56,9 +56,10 @@ namespace mr {
         Path candidate;
         while (beg->first == src) {
           auto tmp = find_path_reversed(beg->second, dest);
-          if (tmp.has_value() && tmp->size() < candidate.size()) {
+          if (tmp.has_value() && (tmp->size() < candidate.size() || candidate.size() == 0)) {
             candidate = std::move(tmp.value());
           }
+          beg++;
         }
 
         return std::move(candidate.emplace_back(src));
