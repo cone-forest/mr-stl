@@ -1,7 +1,6 @@
-#ifndef __hashmap_hpp__
-#define __hashmap_hpp__
+#pragma once
 
-#include "../def.hpp"
+#include "def.hpp"
 
 namespace mr {
   template <typename K, typename V, typename H = std::hash<K>>
@@ -55,5 +54,3 @@ namespace mr {
       }
     };
 }
-
-#endif // __hashmap_hpp__

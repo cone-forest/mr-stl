@@ -1,4 +1,8 @@
-#include "../vector/vector.hpp"
+#pragma once
+
+#include <ranges>
+#include "vector/vector.hpp"
+#include "vector/amortized_vector.hpp"
 
 namespace mr {
   template <typename T>
@@ -32,12 +36,12 @@ namespace mr {
         return std::nullopt;
       }
 
-      std::optional<Path> find_path(std::size_t src, std::size_t dest) const {
+      std::optional<Path> find_path_reversed(std::size_t src, std::size_t dest) const {
         if (src > _nodes.size() || dest > _nodes.size()) {
           return std::nullopt;
         }
         if (src == dest) {
-          return mr::Vector<Node>{dest};
+          return Path{dest};
         }
 
         // find range of edges where src is source
@@ -48,21 +52,30 @@ namespace mr {
             break;
           }
         }
-        const Edge *end = beg;
-        while (end - _edges.data() < _edges.size() &&
-               end->first == src) {
-          end++;
+        // calculate path from each child-node, return minimum
+        Path candidate;
+        while (beg->first == src) {
+          auto tmp = find_path_reversed(beg->second, dest);
+          if (tmp.has_value() && tmp->size() < candidate.size()) {
+            candidate = std::move(tmp.value());
+          }
         }
 
-        // dijkstra algorithm
-        // walk all results
-        // choose minimal
-        // append at the beginning
-
-        return mr::Vector<Node>{beg->first};
+        return std::move(candidate.emplace_back(src));
       }
 
-      template <typename Fn1, typename Fn2> requires (std::is_invocable_v<Fn1, Node> && std::is_invocable_v<Fn2, Node>)
+      std::optional<Path> find_path(std::size_t src, std::size_t dest) const {
+        auto tmp = find_path_reversed(src, dest);
+        if (tmp.has_value()) {
+          // return std::ranges::reverse(std::move(tmp.value()));
+          std::ranges::reverse(tmp.value());
+          return std::move(tmp.value());
+        }
+        return std::nullopt;
+      }
+
+      template <typename Fn1, typename Fn2>
+        requires (std::is_invocable_v<Fn1, Node> && std::is_invocable_v<Fn2, Node>)
       std::optional<Path> find_path(Fn1 &&f1, Fn2 &&f2) const {
         std::optional<std::size_t> src = find_if(f1);
         std::optional<std::size_t> dest = find_if(f2);
@@ -81,8 +94,7 @@ namespace mr {
       }
 
       Graph &add_edge(std::size_t src, std::size_t dest) {
-        _edges.emplace_back(src, dest);
-        std::ranges::sort(_edges);
+        _edges.push_sorted(src, dest);
         return *this;
       }
 

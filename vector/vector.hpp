@@ -1,5 +1,4 @@
-#ifndef __vector_hpp__
-#define __vector_hpp__
+#pragma once
 
 #include "../def.hpp"
 #include "../span/span.hpp"
@@ -20,6 +19,10 @@ namespace mr {
       Vector(const T *data, std::size_t size) :
         _data(data, size), _size(size) {}
 
+      // copy semantic
+      Vector(const Vector &other) noexcept = delete;
+      Vector & operator=(const Vector &other) noexcept = delete;
+
       // move semantic
       Vector(Vector &&other) noexcept = default;
       Vector & operator=(Vector &&other) noexcept = default;
@@ -30,7 +33,7 @@ namespace mr {
           if (_size >= _data.size()) [[unlikely]] {
             _data = resized(_size * 2 + 1).value_or(std::move(_data)); // assign new value on success
           }
-          _data[_size++] = {args...};
+          _data[_size++] = T(args...);
           return *this;
         }
 
@@ -76,5 +79,3 @@ namespace mr {
       }
     };
 }
-
-#endif // __vector_hpp__

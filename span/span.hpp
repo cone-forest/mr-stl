@@ -1,7 +1,6 @@
-#ifndef __span_hpp__
-#define __span_hpp__
+#pragma once
 
-#include "../def.hpp"
+#include "def.hpp"
 
 namespace mr {
   template <typename T>
@@ -74,5 +73,3 @@ namespace mr {
       ~OwningSpan() noexcept = default;
     };
 }
-
-#endif // __span_hpp__

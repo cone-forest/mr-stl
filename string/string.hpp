@@ -1,5 +1,4 @@
-#ifndef __string_hpp__
-#define __string_hpp__
+#pragma once
 
 #include "../vector/vector.hpp"
 
@@ -44,5 +43,3 @@ namespace mr {
   template <typename C = char>
     using StringView = Span<C>;
 }
-
-#endif // __string_hpp__
