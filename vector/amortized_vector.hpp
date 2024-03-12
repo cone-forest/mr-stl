@@ -42,7 +42,7 @@ namespace mr {
         auto at = [this](auto idx) -> T& { return this->operator[](idx); };
 
         T val = at(i);
-        while (i > 0 && at(i - 1) > at(i)) {
+        while (i > 0 && at(i - 1) > val) {
           at(i) = at(i - 1);
           i--;
         }
