@@ -44,6 +44,25 @@ namespace mr {
         return std::nullopt;
       }
 
+    template <typename ...Args>
+      requires (std::is_constructible_v<T, Args...>)
+      Vector & push_sorted(Args ...args) {
+        emplace_back(args...);
+        // insertion sort
+        std::size_t i = _size - 1; // last element index
+        auto at = [this](auto idx) -> T& { return this->operator[](idx); };
+
+        T val = at(i);
+        while (i > 0 && at(i - 1) > at(i)) {
+          at(i) = at(i - 1);
+          i--;
+        }
+
+        at(i) = val;
+
+        return *this;
+      }
+
       // getters
       T * data() noexcept {return _data.data(); }
       const T * data() const noexcept {return _data.data(); }
