@@ -2,6 +2,7 @@
 #define __def_hpp__
 
 #include <span>
+#include <ranges>
 #include <cstddef>
 #include <cstring>
 #include <optional>

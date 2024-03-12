@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../def.hpp"
-#include "../span/span.hpp"
+#include "mr-stl/def.hpp"
+#include "mr-stl/span/span.hpp"
 
 namespace mr {
   template <typename T>

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <ranges>
-#include "vector/vector.hpp"
-#include "vector/amortized_vector.hpp"
+#include "mr-stl/vector/vector.hpp"
+#include "mr-stl/vector/amortized_vector.hpp"
 
 namespace mr {
   template <typename T>
