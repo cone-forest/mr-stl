@@ -20,8 +20,8 @@ namespace mr {
         _data(data, size), _size(size) {}
 
       // copy semantic
-      Vector(const Vector &other) noexcept = delete;
-      Vector & operator=(const Vector &other) noexcept = delete;
+      Vector(const Vector &other) noexcept = default;
+      Vector & operator=(const Vector &other) noexcept = default;
 
       // move semantic
       Vector(Vector &&other) noexcept = default;
@@ -66,16 +66,33 @@ namespace mr {
         return *this;
       }
 
-      // getters
-      T * data() noexcept {return _data.data(); }
-      const T * data() const noexcept {return _data.data(); }
-      std::size_t size() const noexcept {return _size; }
-      std::size_t capacity() const noexcept {return _data.size(); }
-      T& operator[](std::size_t i) { return _data[i]; }
-      T operator[](std::size_t i) const { return _data[i]; }
-
-      bool operator<(const Vector<T> &other) const noexcept {
-        return _size < other._size || (_size == other._size && _data < other._data);
+    template <typename ...Args>
+      requires (std::is_constructible_v<T, Args...>)
+    Vector & emplace_at(std::size_t index, Args ...args) {
+      emplace_back();
+      for (std::size_t i = index + 1; i < size(); i++) {
+        _data[i] = _data[i - 1];
       }
-    };
+      _data[index] = T(args...);
+      return *this;
+    }
+
+    template <typename ...Args>
+      requires (std::is_constructible_v<T, Args...>)
+    Vector & emplace_at(T *location, Args ...args) {
+      return emplace_back(std::distance(data(), location), args...);
+    }
+
+    // getters
+    T * data() noexcept {return _data.data(); }
+    const T * data() const noexcept {return _data.data(); }
+    std::size_t size() const noexcept {return _size; }
+    std::size_t capacity() const noexcept {return _data.size(); }
+    T& operator[](std::size_t i) { return _data[i]; }
+    T operator[](std::size_t i) const { return _data[i]; }
+
+    bool operator<(const Vector<T> &other) const noexcept {
+      return _size < other._size || (_size == other._size && _data < other._data);
+    }
+  };
 }

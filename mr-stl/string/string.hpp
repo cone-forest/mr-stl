@@ -11,6 +11,7 @@ namespace mr {
       template <typename ...Args>
         String(Args... args) : Vector<char>(args...) {}
       String(const char *str) : Vector<char>(str, strlen(str)) {}
+      String(char *str) : Vector<char>(str, strlen(str)) {}
 
       // move semantic
       String(String &&other) noexcept = default;
