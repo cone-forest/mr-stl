@@ -98,10 +98,13 @@ namespace mr {
         }
       }
 
-      T* data() noexcept { return _data; }
-      const T* data() const noexcept { return _data; }
+      T * data() noexcept { return _data; }
+      const T * data() const noexcept { return _data; }
+
       std::size_t size() const noexcept { return _capacity; }
-      T &operator[](std::size_t i) { return _data[i]; }
+
+      T & operator[](std::size_t i) { return _data[i]; }
+      const T & operator[](std::size_t i) const { return _data[i]; }
 
       bool operator<(const OwningSpan<T> &other) const noexcept {
         return std::memcmp(_data, other._data, std::min(_capacity, other._capacity)) < 0;
