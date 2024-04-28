@@ -42,5 +42,9 @@ namespace mr {
     };
 
   template <typename C = char>
-    using StringView = Span<C>;
+    struct StringView : Span<C> {
+      using Span<C>::Span;
+      StringView(const String<C> &str) :
+        Span<C>{str.data(), str.size()} {}
+    };
 }
