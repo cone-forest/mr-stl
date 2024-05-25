@@ -7,15 +7,21 @@
 #include <cstring>
 #include <optional>
 #include <iostream>
-#include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <memory>
 
 namespace mr {
   template <typename T>
-    concept Range = requires {
-      T::begin();
-      T::end();
+    concept Range = requires (T a) {
+      begin(a);
+      end(a);
+    };
+
+  template <typename T>
+    concept LimitedRange = requires {
+      requires Range<T>;
+      T::size();
     };
 
   template <Range R, typename Compare>
@@ -27,6 +33,12 @@ namespace mr {
       }
       return false;
     }
+
+  void reverse(LimitedRange auto &range) {
+    for (std::size_t i = 0; i < range.size() / 2; i++) {
+      std::swap(range[i], range[range.size() - i - 1]);
+    }
+  }
 
   template<class... Ts>
     struct overloads : Ts... { using Ts::operator()...; };
