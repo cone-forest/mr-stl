@@ -17,6 +17,9 @@ namespace mr {
         // requires (std::is_constructible_v<T, Args> && ...)
         Vector(Args... args) : _data(static_cast<T>(args)...), _size(sizeof...(args)) {}
 
+      Vector(std::size_t size) :
+        _data(size) {}
+
       Vector(const T *data, std::size_t size) :
         _data(data, size), _size(size) {}
 
@@ -70,9 +73,7 @@ namespace mr {
       requires (std::is_constructible_v<T, Args...>)
     Vector & emplace_at(std::size_t index, Args ...args) {
       emplace_back();
-      for (std::size_t i = index + 1; i < size(); i++) {
-        _data[i] = _data[i - 1];
-      }
+      std::memmove(_data + index, _data + index + 1, size() - index - 1);
       _data[index] = std::move(T(args...));
       return *this;
     }
@@ -80,7 +81,7 @@ namespace mr {
     template <typename ...Args>
       requires (std::is_constructible_v<T, Args...>)
     Vector & emplace_at(T *location, Args ...args) {
-      return emplace_back(std::distance(data(), location), args...);
+      return emplace_at(std::distance(data(), location), args...);
     }
 
     Vector & remove(std::size_t id) {
@@ -106,6 +107,10 @@ namespace mr {
 
     bool operator<(const Vector<T> &other) const noexcept {
       return _size < other._size || (_size == other._size && _data < other._data);
+    }
+
+    bool operator==(const Vector<T> &other) const noexcept {
+      return !(*this < other) && !(other < *this);
     }
   };
 }
