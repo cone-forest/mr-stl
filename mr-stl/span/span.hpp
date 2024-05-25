@@ -31,9 +31,7 @@ namespace mr {
       }
 
       OwningSpan & operator=(const OwningSpan &other) noexcept {
-        if (this == &other) {
-          return;
-        }
+        if (this == &other) { return *this; }
 
         if (_capacity < other._capacity) {
           delete[] _data;
