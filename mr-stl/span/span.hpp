@@ -22,10 +22,10 @@ namespace mr {
         if (_capacity < other._capacity) {
           delete[] _data;
           _data = new (std::nothrow) T[other._capacity];
+          _capacity = other._capacity;
         }
 
         if (_data != nullptr) {
-          _capacity = other._capacity;
           std::memcpy(_data, other._data, _capacity * sizeof(T));
         }
       }
@@ -36,10 +36,10 @@ namespace mr {
         if (_capacity < other._capacity) {
           delete[] _data;
           _data = new (std::nothrow) T[other._capacity];
+          _capacity = other._capacity;
         }
 
         if (_data != nullptr) {
-          _capacity = other._capacity;
           std::memcpy(_data, other._data, _capacity * sizeof(T));
         }
 
@@ -49,6 +49,8 @@ namespace mr {
       OwningSpan(OwningSpan &&other) noexcept {
         if (this == &other) { return; }
 
+        delete[] _data;
+
         _data = std::move(other._data);
         _capacity = std::move(other._capacity);
         other._data = nullptr;
@@ -57,6 +59,8 @@ namespace mr {
 
       OwningSpan & operator=(OwningSpan &&other) noexcept {
         if (this == &other) { return *this; }
+
+        delete[] _data;
 
         _data = std::move(other._data);
         _capacity = std::move(other._capacity);
