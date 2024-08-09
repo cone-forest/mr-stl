@@ -2,7 +2,7 @@
 
 #include <functional>
 #include "mr-stl/vector/vector.hpp"
-#include "mr-stl/vector/amortized_vector.hpp"
+// #include "mr-stl/vector/amortized_vector.hpp"
 
 namespace mr {
   template <typename T>
@@ -76,7 +76,7 @@ namespace mr {
       std::optional<Path> find_path(std::size_t src, std::size_t dest) const {
         auto tmp = find_path_reversed(src, dest);
         return tmp.and_then([](Path &path) {
-            std::ranges::reverse(path);
+            mr::reverse(path);
             return path;
             });
       }

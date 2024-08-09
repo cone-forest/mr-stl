@@ -6,14 +6,17 @@ namespace mr {
   template <typename T>
   struct AmortizedVector : FlatRangeMethods<AmortizedVector, T> {
     private:
-    static inline constexpr std::size_t initial_capacity = 1024 / sizeof(T);
+    static inline constexpr std::size_t initial_capacity = 2 * sizeof(std::size_t) - sizeof(char);
 
-    std::size_t _size = 0;
-    std::size_t _capacity = initial_capacity;
+    union {
+      struct {
+        char _size = 0;
+        T _data[initial_capacity] {};
+      } _sbuf = {};
+      mr::Vector<T> _wbuf;
+    } _buf;
 
-    // ~1024 byte buffer of type T
-    T buf[initial_capacity];
-    std::optional<Vector<T>> _data;
+    T* _data = buf.sbuf.data;
 
     public:
     template <typename ...Args>
