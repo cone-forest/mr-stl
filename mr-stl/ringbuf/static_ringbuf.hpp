@@ -5,7 +5,7 @@
 
 namespace mr {
   template <typename T, std::size_t S>
-    struct DynamicRingBuffer {
+    struct StaticRingBuffer {
     private:
       std::array<T, S> _data;
       std::size_t _size;
@@ -14,19 +14,19 @@ namespace mr {
 
     public:
       // default constructor
-      constexpr DynamicRingBuffer() noexcept = default;
+      constexpr StaticRingBuffer() noexcept = default;
       // copy constructor
-      constexpr DynamicRingBuffer(const DynamicRingBuffer &) noexcept = default;
+      constexpr StaticRingBuffer(const StaticRingBuffer &) noexcept = default;
       // move constructor
-      constexpr DynamicRingBuffer(DynamicRingBuffer &&) noexcept = default;
+      constexpr StaticRingBuffer(StaticRingBuffer &&) noexcept = default;
       // copy assignment operator
-      constexpr DynamicRingBuffer &operator=(const DynamicRingBuffer &) noexcept =
+      constexpr StaticRingBuffer &operator=(const StaticRingBuffer &) noexcept =
           default;
       // move assignment operator
-      constexpr DynamicRingBuffer &operator=(DynamicRingBuffer &&) noexcept =
+      constexpr StaticRingBuffer &operator=(StaticRingBuffer &&) noexcept =
           default;
       // destructor
-      ~DynamicRingBuffer() noexcept = default;
+      ~StaticRingBuffer() noexcept = default;
 
       bool push(T value) {
         if (full()) {
