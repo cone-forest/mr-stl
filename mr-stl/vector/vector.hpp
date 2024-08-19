@@ -34,22 +34,23 @@ namespace mr {
       template <typename ...Args>
         // requires (std::is_constructible_v<T, Args...>)
         Vector & emplace_back(Args ...args) {
+          auto resized =
+              [this](const std::size_t size) -> std::optional<OwningSpan<T>> {
+            if (T *tmp = new (std::nothrow) T[size]; tmp != nullptr) [[likely]] {
+              // move on successful allocation
+              std::uninitialized_move_n(_data.data(), _data.size(), tmp);
+              return OwningSpan(tmp, size);
+            }
+            return std::nullopt;
+          };
+
           if (_size >= _data.size()) [[unlikely]] {
             _data = resized(_size * 2 + 1).value_or(std::move(_data)); // assign new value on success
           }
-          _data[_size++] = std::move(T(args...));
+          T tmp{std::forward<Args>(args)...};
+          _data[_size++] = std::move(tmp);
           return *this;
         }
-
-      std::optional<OwningSpan<T>> resized(const std::size_t size) const noexcept {
-        if (T *tmp = new (std::nothrow) T[size]; tmp != nullptr) [[likely]] {
-          // copy on successful allocation
-          std::memcpy(tmp, _data.data(), _size * sizeof(T));
-          return OwningSpan(tmp, size);
-        }
-
-        return std::nullopt;
-      }
 
     template <typename ...Args>
       requires (std::is_constructible_v<T, Args...>)

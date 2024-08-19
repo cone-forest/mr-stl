@@ -9,9 +9,9 @@ namespace mr {
                     RangeOutputOperators<String, C> {
       String() noexcept = default;
       template <typename ...Args>
-        String(Args... args) : Vector<char>(args...) {}
-      String(const char *str) : Vector<char>(str, strlen(str)) {}
-      String(char *str) : Vector<char>(str, strlen(str)) {}
+        String(Args... args) : Vector<C>(std::forward<Args>(args)...) {}
+      String(const C *str) : Vector<C>(str, strlen(str)) {}
+      String(C *str) : Vector<C>((const C *)str, strlen(str)) {}
 
       // move semantic
       String(String &&other) noexcept = default;
