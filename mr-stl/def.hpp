@@ -2,7 +2,9 @@
 #define __def_hpp__
 
 #include <functional>
+#if __cpp_lib_span >= 202002L
 #include <span>
+#endif
 #include <cstddef>
 #include <cstring>
 #include <optional>

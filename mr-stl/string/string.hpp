@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "mr-stl/vector/vector.hpp"
 
 namespace mr {
@@ -42,9 +43,9 @@ namespace mr {
     };
 
   template <typename C = char>
-    struct StringView : Span<C> {
-      using Span<C>::Span;
+    struct StringView : std::string_view<C> {
+      using string_view<C>::string_view;
       StringView(const String<C> &str) :
-        Span<C>{str.data(), str.size()} {}
+        string_view<C>(str.data(), str.size()) {}
     };
 }
