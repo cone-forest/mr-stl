@@ -90,16 +90,19 @@ namespace mr {
         for (std::size_t i = id; i < _size; i++) {
           _data[i] = _data[i + 1];
         }
+        return *this;
       }
 
       Vector& resize(std::size_t new_size) {
         while (_data.size() < new_size) [[unlikely]] {
           try_resize();
         }
+        return *this;
       }
 
       Vector & clear() {
         _size = 0;
+        return *this;
       }
 
       // getters
@@ -131,7 +134,7 @@ namespace mr {
       }
 
       void try_resize() {
-        _data = resized(_size * 2 + 1).value_or(std::move(_data)); // assign new value on success
+        _data = resized(capacity() * 2 + 1).value_or(std::move(_data)); // assign new value on success
       }
     };
 }
