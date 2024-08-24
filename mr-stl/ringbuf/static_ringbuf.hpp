@@ -52,6 +52,21 @@ namespace mr {
         return value;
       }
 
+      const T & operator[](std::size_t index) const {
+        return _data[(_head + index) % _size];
+      }
+
+      T & operator[](std::size_t index) {
+        return _data[(_head + index) % _size];
+      }
+
+      std::optional<T> at(std::size_t index) const noexcept {
+        if (_size != 0) [[likely]] {
+          return _data[(_head + index) % _size];
+        }
+        return std::nullopt;
+      }
+
       constexpr size_t size() const { return _size; }
 
       constexpr size_t capacity() const { return S; }
