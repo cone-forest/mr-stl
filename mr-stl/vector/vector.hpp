@@ -93,10 +93,17 @@ namespace mr {
         return *this;
       }
 
-      Vector& resize(std::size_t new_size) {
+      Vector & reserve(std::size_t new_size) {
         while (_data.size() < new_size) [[unlikely]] {
           try_resize();
         }
+        return *this;
+      }
+
+      Vector & resize(std::size_t new_size, const T &init = {}) {
+        reserve(new_size);
+        std::uninitialized_fill_n(begin(_data) + _size, new_size - _size, init);
+        _size = new_size;
         return *this;
       }
 
