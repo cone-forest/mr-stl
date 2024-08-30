@@ -14,7 +14,7 @@ namespace mr {
       ~Vector() noexcept = default;
 
       template <typename ...Args>
-        // requires (std::is_constructible_v<T, Args> && ...)
+        requires (std::is_constructible_v<T, Args> && ...)
         Vector(Args... args) : _data(static_cast<T>(args)...), _size(sizeof...(args)) {}
 
       Vector(std::size_t size) :

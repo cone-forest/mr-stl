@@ -43,9 +43,9 @@ namespace mr {
     };
 
   template <typename C = char>
-    struct StringView : std::string_view<C> {
-      using string_view<C>::string_view;
+    struct StringView : std::string_view {
+      using std::string_view::string_view;
       StringView(const String<C> &str) :
-        string_view<C>(str.data(), str.size()) {}
+        std::string_view(str.data(), str.size()) {}
     };
 }
