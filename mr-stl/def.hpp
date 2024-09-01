@@ -21,9 +21,9 @@ namespace mr {
     };
 
   template <typename T>
-    concept LimitedRange = requires {
+    concept LimitedRange = requires (T a) {
       requires Range<T>;
-      T::size();
+      a.size();
     };
 
   template <Range R, typename Compare>
