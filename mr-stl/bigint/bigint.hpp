@@ -42,12 +42,25 @@ namespace mr {
     BigInt & operator=(const BigInt &other) noexcept = default;
 
     BigInt(std::integral auto init) : _sign(init < 0 ? Sign::Negative : Sign::Positive) {
-      constexpr std::size_t size = sizeof(init) / sizeof(T);
-      constexpr T mask = std::numeric_limits<T>::max();
+      constexpr std::size_t size = std::max(1ul, sizeof(init) / sizeof(T));
+      constexpr auto mask = (std::make_unsigned_t<decltype(init)>)std::numeric_limits<T>::max();
+      init = init < 0 ? -init : init;
       for (int i = 0; i < size; i++) {
+        int shift = (sizeof(T) * 8 * i);
+        T value = (init & (mask << shift)) >> shift;
+        if (value != 0) {
+          _value.emplace_back();
+        }
       }
+    }
 
-      _value.emplace_back(static_cast<T>(init < 0 ? -init : init));
+    BigInt & trim() {
+      auto size = _value.size();
+      while (size > 0 && _value[size-1] == 0) {
+        size--;
+      }
+      _value.size(size);
+      return *this;
     }
 
     bool validate_init_value(mr::StringView<char> init) {
@@ -65,7 +78,7 @@ namespace mr {
     }
 
     friend bool is_neutral(const BigInt &other) noexcept {
-      return other.size() == 0 || other.size() == 1 && other._value[0] == 0;
+      return other.size() == 0 || other.size() == 1 && other[0] == 0;
     }
 
     // getters
@@ -149,16 +162,26 @@ namespace mr {
     // addition operators definitions
     friend constexpr BigInt<T> operator+(const BigInt<T> &lhs, const BigInt<T> &rhs) {
       // swap arguments if len(lhs) < len(rhs)
+      if (is_neutral(lhs)) {
+        return rhs;
+      }
+      if (is_neutral(rhs)) {
+        return lhs;
+      }
       if (lhs.size() < rhs.size()) {
         return rhs + lhs;
       }
+      if (lhs._sign != rhs._sign) {
+        return lhs - -rhs;
+      }
+
       // continue assuming len(lhs) >= len(rhs)
       // perform addition
       BigInt tmp = lhs;
       bool trail = false;
       for (std::size_t i = 0; i < rhs.size(); i++) {
-        bool next_trail = (tmp._value[i] > BigInt<T>::shit_max - std::max<T>(rhs._value[i], trail));
-        tmp._value[i] += rhs._value[i] + static_cast<T>(trail);
+        bool next_trail = (tmp[i] > BigInt<T>::shit_max - std::max<T>(rhs[i], trail));
+        tmp[i] += rhs[i] + static_cast<T>(trail);
         trail = next_trail;
       }
 
@@ -176,21 +199,40 @@ namespace mr {
 
     friend constexpr BigInt<T> operator-(const BigInt<T> &lhs, const BigInt<T> &rhs) {
       // swap arguments if len(lhs) < len(rhs)
+      if (is_neutral(lhs)) {
+        return -rhs;
+      }
+      if (is_neutral(rhs)) {
+        return lhs;
+      }
       if (lhs < rhs) {
         return -(rhs - lhs);
       }
-
-      // continue assuming len(lhs) >= len(rhs)
-      // perform addition
-      BigInt tmp = lhs;
-      bool trail = false;
-      for (std::size_t i = 0; i < rhs.size(); i++) {
-        bool next_trail = (tmp._value[i] < std::max<int>(rhs._value[i], rhs._value[i] + trail));
-        tmp._value[i] -= rhs._value[i] + static_cast<T>(trail);
-        trail = next_trail;
+      if (lhs._sign != rhs._sign) {
+        return lhs + -rhs;
       }
 
-      return tmp;
+      BigInt out = lhs;
+      for(int x = 0; x < rhs.size(); x++){
+        if (out[x] >= rhs[x]){
+          out[x] -= rhs[x];
+        } else {
+          std::size_t y = x + 1;
+          while (out[y] == 0){
+            y++;
+          }
+
+          out[y]--;
+
+          for(y--; y > x; y--){
+            out[y] = std::numeric_limits<T>::max();
+          }
+
+          out[x] -= rhs[x];
+        }
+      }
+
+      return std::move(out.trim());
     }
 
     friend constexpr BigInt<T> operator+(const BigInt<T> &rhs) {
@@ -215,7 +257,7 @@ namespace mr {
         rhs_copy *= 2;
       }
 
-      return sum;
+      return std::move(sum.trim());
     }
 
     friend BigInt<T> karatsuba(const BigInt<T> & lhs, const BigInt<T> & rhs, T bm = 0x100000) {
@@ -229,7 +271,7 @@ namespace mr {
       BigInt<T> z0 = karatsuba(x0, y0);
       BigInt<T> z2 = karatsuba(BigInt<T>(x1), BigInt<T>(y1));
       BigInt<T> z1 = karatsuba(x1 + x0, y1 - y0) - z2 - z0;
-      return peasant(peasant(z2, bm) + z1, bm) + z0;
+      return std::move((peasant(peasant(z2, bm) + z1, bm) + z0).trim());
     }
 
     friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, const BigInt<T> &rhs) {
@@ -245,7 +287,7 @@ namespace mr {
 
       BigInt<T> tmp = karatsuba(lhs, rhs);
       tmp._sign = lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative;
-      return std::move(tmp);
+      return std::move(tmp.trim());
     }
 
     friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, T rhs) {
@@ -270,7 +312,7 @@ namespace mr {
         carry = rem;
       }
 
-      return std::move(tmp);
+      return std::move(tmp.trim());
     }
 
     friend constexpr std::tuple<BigInt<T>, T> divmod(const BigInt<T> &lhs, T rhs) {
@@ -296,6 +338,8 @@ namespace mr {
         qr.second -= rhs;
         qr.first++;
       }
+      qr.first.trim();
+      qr.second.trim();
       return qr;
     }
 
@@ -320,7 +364,7 @@ namespace mr {
     friend constexpr BigInt operator++(BigInt &lhs, int) noexcept { auto tmp = lhs; lhs += 1; return tmp; }
     friend constexpr BigInt operator--(BigInt &lhs, int) noexcept { auto tmp = lhs; lhs -= 1; return tmp; }
     friend constexpr BigInt & operator++(BigInt &rhs) noexcept { return rhs += 1; }
-    friend constexpr BigInt & operator--(BigInt &rhs) noexcept { return rhs += 1; }
+    friend constexpr BigInt & operator--(BigInt &rhs) noexcept { return rhs -= 1; }
 
     friend constexpr BigInt & operator+=(BigInt &lhs, const BigInt &rhs) noexcept { lhs = lhs + rhs; return lhs; }
     friend constexpr BigInt & operator-=(BigInt &lhs, const BigInt &rhs) noexcept { lhs = lhs - rhs; return lhs; }
@@ -337,17 +381,20 @@ namespace mr {
     friend constexpr BigInt & operator%=(BigInt &lhs, T rhs) noexcept { lhs = lhs % rhs; return lhs; }
 
     friend BigInt::Sign negate(BigInt::Sign sign) { return sign == Sign::Positive ? Sign::Negative : Sign::Positive; }
+    friend void negate(BigInt &other) {
+      other._sign = negate(other._sign);
+    }
 
     friend std::ostream & operator<<(std::ostream &out, const BigInt<T> &value) noexcept {
       BigInt<T> copy = value;
-      for (int i = copy.size(); i >= 0; i--) {
-        out << copy[i] << ' ';
+      if (copy._sign == Sign::Negative) {
+        out << '-';
+        negate(copy);
       }
-      return out;
-
-      while (copy > 0) {
-        out << ('0' + copy % 10);
-        copy /= 10;
+      while (!is_neutral(copy)) {
+        auto [res, rem] = divmod(copy, 10);
+        out << ('0' + rem);
+        copy = std::move(res);
       }
       return out;
     }
