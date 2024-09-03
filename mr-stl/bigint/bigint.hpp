@@ -42,14 +42,14 @@ namespace mr {
     BigInt & operator=(const BigInt &other) noexcept = default;
 
     BigInt(std::integral auto init) : _sign(init < 0 ? Sign::Negative : Sign::Positive) {
-      constexpr std::size_t size = std::max(1ul, sizeof(init) / sizeof(T));
+      constexpr std::size_t size = std::max<std::size_t>(sizeof(init) / sizeof(T), 1);
       constexpr auto mask = (std::make_unsigned_t<decltype(init)>)std::numeric_limits<T>::max();
       init = init < 0 ? -init : init;
       for (int i = 0; i < size; i++) {
         int shift = (sizeof(T) * 8 * i);
         T value = (init & (mask << shift)) >> shift;
-        if (value != 0) {
-          _value.emplace_back();
+        if (_value.size() == 0 || value != 0) {
+          _value.emplace_back(value);
         }
       }
     }
@@ -321,13 +321,11 @@ namespace mr {
     }
 
     friend constexpr std::tuple<BigInt<T>, BigInt<T>> divmod(const BigInt<T> &lhs, const BigInt<T> &rhs) noexcept {
-      std::pair<BigInt<T>, BigInt<T>> qr;
       if (is_neutral(lhs)) {
-        qr.first = 0;
-        qr.second = 0;
-        return qr;
+        return {{}, {}};
       }
 
+      std::pair<BigInt<T>, BigInt<T>> qr;
       qr = divmod(lhs >> 1, rhs);
       qr.first <<= 1;
       qr.second <<= 1;
@@ -387,7 +385,7 @@ namespace mr {
 
     friend std::ostream & operator<<(std::ostream &out, const BigInt<T> &value) noexcept {
       BigInt<T> copy = value;
-      if (copy._sign == Sign::Negative) {
+      if (!is_neutral(copy) && copy._sign == Sign::Negative) {
         out << '-';
         negate(copy);
       }
