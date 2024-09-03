@@ -325,20 +325,19 @@ namespace mr {
         return {{}, {}};
       }
 
-      std::pair<BigInt<T>, BigInt<T>> qr;
-      qr = divmod(lhs >> 1, rhs);
-      qr.first <<= 1;
-      qr.second <<= 1;
+      auto [res, rem] = divmod(lhs >> 1, rhs);
+      res <<= 1;
+      rem <<= 1;
       if (lhs[0] & 1) {
-        qr.second++;
+        rem++;
       }
-      if (qr.second >= rhs) {
-        qr.second -= rhs;
-        qr.first++;
+      if (rem >= rhs) {
+        rem -= rhs;
+        res++;
       }
-      qr.first.trim();
-      qr.second.trim();
-      return qr;
+      res.trim();
+      rem.trim();
+      return {std::move(res), std::move(rem)};
     }
 
     friend constexpr T operator%(const BigInt<T> &lhs, T rhs) noexcept {
