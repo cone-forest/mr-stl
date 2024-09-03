@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "mr-stl/def.hpp"
 #include "mr-stl/span/span.hpp"
 
@@ -121,6 +123,12 @@ namespace mr {
 
       T& operator[](std::size_t i) { return _data[i]; }
       const T & operator[](std::size_t i) const { return _data[i]; }
+
+      // setters
+      constexpr Vector & size(std::size_t s) noexcept {
+        _size = s;
+        return *this;
+      }
 
       bool operator<(const Vector<T> &other) const noexcept {
         return _size < other._size || (_size == other._size && _data < other._data);
