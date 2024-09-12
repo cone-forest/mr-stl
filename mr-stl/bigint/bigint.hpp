@@ -7,6 +7,35 @@
 #include "mr-stl/vector/vector.hpp"
 
 namespace mr {
+  template <std::integral T>
+  std::tuple<T, T> multiply(T a, T b) {
+    constexpr std::uint64_t halfbitsize = sizeof(T) * 4;
+    constexpr std::uint64_t lomask = (1 << halfbitsize) - 1;
+    constexpr std::uint64_t himask = lomask << halfbitsize;
+    constexpr auto lo = [=](T e) -> T { return e & lomask; };
+    constexpr auto hi = [=](T e) -> T { return (e >> halfbitsize) & lomask; };
+
+    T s0, s1, s2, s3;
+
+    T x = lo(a) * lo(b);
+    s0 = lo(x);
+
+    x = hi(a) * lo(b) + hi(x);
+    s1 = lo(x);
+    s2 = hi(x);
+
+    x = s1 + lo(a) * hi(b);
+    s1 = lo(x);
+
+    x = s2 + hi(a) * hi(b) + hi(x);
+    s2 = lo(x);
+    s3 = hi(x);
+
+    T res = s1 << halfbitsize | s0;
+    T rem = s3 << halfbitsize | s2;
+    return {res, rem};
+    }
+
   template <std::integral T = std::uint64_t>
   struct BigInt {
     inline static constexpr T shit_max = std::numeric_limits<T>::max();
@@ -26,13 +55,15 @@ namespace mr {
         throw std::invalid_argument("Invalid argument");
       }
 
-      _sign = init[0] == '-' ? Sign::Negative : Sign::Positive;
+      _value.emplace_back(0u);
+
       for (char e : init) {
         if (std::isdigit(e)) [[likely]] {
           *this *= 10;
           *this += e - '0';
         }
       }
+      _sign = init[0] == '-' ? Sign::Negative : Sign::Positive;
     }
 
     BigInt(BigInt &&other) noexcept = default;
@@ -42,16 +73,18 @@ namespace mr {
     BigInt & operator=(const BigInt &other) noexcept = default;
 
     BigInt(std::integral auto init) : _sign(init < 0 ? Sign::Negative : Sign::Positive) {
+      if (init == 0) {
+        return;
+      }
       constexpr std::size_t size = std::max<std::size_t>(sizeof(init) / sizeof(T), 1);
       constexpr auto mask = (std::make_unsigned_t<decltype(init)>)std::numeric_limits<T>::max();
       init = init < 0 ? -init : init;
       for (int i = 0; i < size; i++) {
         int shift = (sizeof(T) * 8 * i);
         T value = (init & (mask << shift)) >> shift;
-        if (_value.size() == 0 || value != 0) {
-          _value.emplace_back(value);
-        }
+        _value.emplace_back(value);
       }
+      trim();
     }
 
     BigInt & trim() {
@@ -81,9 +114,20 @@ namespace mr {
       return other.size() == 0 || other.size() == 1 && other[0] == 0;
     }
 
+    friend BigInt<T> abs(const BigInt<T>& other) noexcept {
+      BigInt<T> res = other;
+      res._sign = Sign::Positive;
+      return std::move(res);
+    }
+
     // getters
     T operator[](std::size_t i) const { return _value[i]; }
-    T & operator[](std::size_t i) { return _value[i]; }
+    T & operator[](std::size_t i) {
+      if (i >= _value.size()) {
+        std::cout << "life is shit\n";
+      }
+      return _value[i];
+    }
     std::size_t size() const { return _value.size(); }
 
     friend bool operator==(const BigInt &lhs, std::integral auto rhs) {
@@ -97,8 +141,12 @@ namespace mr {
       return !(lhs == rhs);
     }
     friend bool operator<(const BigInt &lhs, const BigInt &rhs) noexcept {
-      if (is_neutral(lhs) && is_neutral(rhs)) {
-        return false;
+      if (is_neutral(lhs)) {
+        if (is_neutral(rhs)) {
+          return false;
+        } else {
+          return rhs._sign == Sign::Positive;
+        }
       }
       if (lhs._sign != rhs._sign) {
         return lhs._sign == Sign::Negative && rhs._sign == Sign::Positive;
@@ -117,7 +165,7 @@ namespace mr {
           return negative ? !res : res;
         }
       }
-      return negative ? !res : res;
+      return false;
     }
     friend bool operator<=(const BigInt &lhs, const BigInt &rhs) noexcept {
       return lhs < rhs || lhs == rhs;
@@ -156,6 +204,7 @@ namespace mr {
         carry = (lhs[i] & ((1 << rhs) - 1)) << (sizeof(T) * 8 - rhs);
       }
 
+      copy.trim();
       return std::move(copy);
     }
 
@@ -163,15 +212,18 @@ namespace mr {
     friend constexpr BigInt<T> operator+(const BigInt<T> &lhs, const BigInt<T> &rhs) {
       // swap arguments if len(lhs) < len(rhs)
       if (is_neutral(lhs)) {
-        return rhs;
+        return +rhs;
       }
       if (is_neutral(rhs)) {
-        return lhs;
+        return +lhs;
       }
       if (lhs.size() < rhs.size()) {
         return rhs + lhs;
       }
       if (lhs._sign != rhs._sign) {
+        if (lhs._sign == Sign::Negative) {
+          return rhs - -lhs;
+        }
         return lhs - -rhs;
       }
 
@@ -185,13 +237,12 @@ namespace mr {
         trail = next_trail;
       }
 
-      // handle trailing 1
+      int i = rhs.size();
+      while (trail && i < lhs.size()) {
+        trail = ++tmp[i++] == 0;
+      }
       if (trail) {
-        if (lhs.size() != rhs.size()) {
-          tmp[rhs.size()] += trail;
-        } else {
-          tmp._value.emplace_back(trail);
-        }
+        tmp._value.emplace_back((T)trail);
       }
 
       return tmp;
@@ -203,12 +254,15 @@ namespace mr {
         return -rhs;
       }
       if (is_neutral(rhs)) {
-        return lhs;
+        return +lhs;
+      }
+      if (lhs._sign != rhs._sign) {
+        return lhs + -rhs;
       }
       if (lhs < rhs) {
         return -(rhs - lhs);
       }
-      if (lhs._sign != rhs._sign) {
+      if (rhs._sign == Sign::Negative) {
         return lhs + -rhs;
       }
 
@@ -228,7 +282,7 @@ namespace mr {
             out[y] = std::numeric_limits<T>::max();
           }
 
-          out[x] -= rhs[x];
+          out[x] += std::numeric_limits<T>::max() - rhs[x] + 1;
         }
       }
 
@@ -246,34 +300,6 @@ namespace mr {
       return tmp;
     };
 
-    friend BigInt<T> peasant(const BigInt<T> & lhs, const BigInt<T> & rhs) {
-      BigInt<T> rhs_copy = rhs;
-      BigInt<T> sum = 0;
-
-      for (std::size_t x = 0; x < lhs.size(); x++) {
-        if (lhs[x]) {
-          sum += sum + rhs_copy;
-        }
-        rhs_copy *= 2;
-      }
-
-      return std::move(sum.trim());
-    }
-
-    friend BigInt<T> karatsuba(const BigInt<T> & lhs, const BigInt<T> & rhs, T bm = 0x100000) {
-      if ((lhs <= bm) || (rhs <= bm)) {
-        return peasant(lhs, rhs);
-      }
-
-      auto [x0, x1] = divmod(lhs, bm);
-      auto [y0, y1] = divmod(lhs, bm);
-
-      BigInt<T> z0 = karatsuba(x0, y0);
-      BigInt<T> z2 = karatsuba(BigInt<T>(x1), BigInt<T>(y1));
-      BigInt<T> z1 = karatsuba(x1 + x0, y1 - y0) - z2 - z0;
-      return std::move((peasant(peasant(z2, bm) + z1, bm) + z0).trim());
-    }
-
     friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, const BigInt<T> &rhs) {
       if (is_neutral(lhs) || is_neutral(rhs)) {
         return 0;
@@ -285,31 +311,34 @@ namespace mr {
         return lhs;
       }
 
-      BigInt<T> tmp = karatsuba(lhs, rhs);
-      tmp._sign = lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative;
-      return std::move(tmp.trim());
+      constexpr T bm = 0b100000000;
+
+      BigInt<T> x1 = lhs >> 8;
+      BigInt<T> y1 = rhs >> 8;
+      T x0 = lhs[0] & (bm - 1);
+      T y0 = rhs[0] & (bm - 1);
+
+      T z0 = x0 * y0;
+      BigInt<T> z1 = x1 * y0 + y1 * x0;
+      BigInt<T> z2 = x1 * y1;
+      BigInt<T> res = (z2 * bm + z1) * bm + z0;
+      res._sign = lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative;
+      return std::move(res.trim());
     }
 
-    friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, T rhs) {
-      constexpr std::size_t halfbitsize = sizeof(T) * 4;
-      constexpr std::size_t lomask = (1 << halfbitsize) - 1;
-      constexpr std::size_t himask = lomask << halfbitsize;
 
+    friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, T rhs) {
       size_t size = lhs.size();
       BigInt<T> tmp;
       T carry = 0;
       for (int i = 0; i < lhs.size(); i++) {
-        T a0 = lhs[i] & himask;
-        T a1 = lhs[i] & lomask;
-
-        T b0 = rhs & himask;
-        T b1 = rhs & lomask;
-
-        T res = a0 * b1 + a1 * b1 + a1 * b0;
-        T rem = (a0 >> halfbitsize) * (b0 >> halfbitsize);
-
+        auto [res, rem] = multiply(lhs[i], rhs);
         tmp._value.emplace_back(res + carry);
-        carry = rem;
+        carry = rem + (res > std::numeric_limits<T>::max() - carry);
+      }
+
+      if (carry != 0) {
+        tmp._value.emplace_back(carry);
       }
 
       return std::move(tmp.trim());
@@ -317,13 +346,29 @@ namespace mr {
 
     friend constexpr std::tuple<BigInt<T>, T> divmod(const BigInt<T> &lhs, T rhs) {
       auto [res, rem] = divmod(lhs, BigInt(rhs));
-      return {std::move(res), rem[0]};
+      return {is_neutral(res) ? 0 : std::move(res),
+              is_neutral(rem) ? 0 : rem[0] };
     }
 
     friend constexpr std::tuple<BigInt<T>, BigInt<T>> divmod(const BigInt<T> &lhs, const BigInt<T> &rhs) noexcept {
+      // assume lhs >= 0 && rhs >= 0
       if (is_neutral(lhs)) {
         return {{}, {}};
       }
+      if (lhs < rhs) {
+        return {{}, {lhs}};
+      }
+      if (lhs == rhs) {
+        return {1, 0};
+      }
+      /*
+      if (lhs._sign == Sign::Negative) {
+        return divmod(abs(lhs), rhs);
+      }
+      if (rhs._sign == Sign::Negative) {
+        return divmod(lhs, abs(rhs));
+      }
+      */
 
       auto [res, rem] = divmod(lhs >> 1, rhs);
       res <<= 1;
@@ -337,25 +382,36 @@ namespace mr {
       }
       res.trim();
       rem.trim();
+      /*
+      res._sign = (lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative);
+      rem._sign = lhs._sign;
+      */
       return {std::move(res), std::move(rem)};
     }
 
-    friend constexpr T operator%(const BigInt<T> &lhs, T rhs) noexcept {
-      auto [_, res] = divmod(lhs, rhs);
-      return res;
+    friend constexpr T operator%(const BigInt<T> &lhs, std::integral auto rhs) noexcept {
+      using std::abs;
+      auto [_, res] = divmod(abs(lhs), abs(rhs));
+      res._sign = lhs._sign;
+      return std::move(res);
     }
-    friend constexpr BigInt<T> operator/(const BigInt<T> &lhs, T rhs) noexcept {
-      auto [res, _] = divmod(lhs, rhs);
-      return res;
+    friend constexpr BigInt<T> operator/(const BigInt<T> &lhs, std::integral auto rhs) noexcept {
+      using std::abs;
+      auto [res, _] = divmod(abs(lhs), abs(rhs));
+      res._sign = lhs._sign == Sign(rhs >= 0);
+      return std::move(res);
     }
 
     friend constexpr BigInt<T> operator%(const BigInt<T> &lhs, const BigInt<T> &rhs) noexcept {
-      auto [_, res] = divmod(lhs, rhs);
-      return res;
+      using std::abs;
+      auto [_, res] = divmod(abs(lhs), abs(rhs));
+      res._sign = lhs._sign;
+      return std::move(res);
     }
     friend constexpr BigInt<T> operator/(const BigInt<T> &lhs, const BigInt<T> &rhs) noexcept {
-      auto [res, _] = divmod(lhs, rhs);
-      return res;
+      auto [res, _] = divmod(abs(lhs), abs(rhs));
+      res._sign = lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative;
+      return std::move(res);
     }
 
     friend constexpr BigInt operator++(BigInt &lhs, int) noexcept { auto tmp = lhs; lhs += 1; return tmp; }
@@ -369,17 +425,26 @@ namespace mr {
     friend constexpr BigInt & operator/=(BigInt &lhs, const BigInt &rhs) noexcept { lhs = lhs / rhs; return lhs; }
     friend constexpr BigInt & operator%=(BigInt &lhs, const BigInt &rhs) noexcept { lhs = lhs % rhs; return lhs; }
 
-    friend constexpr BigInt & operator+=(BigInt &lhs, T rhs) noexcept { lhs = lhs + rhs; return lhs; }
-    friend constexpr BigInt & operator-=(BigInt &lhs, T rhs) noexcept { lhs = lhs - rhs; return lhs; }
-    friend constexpr BigInt & operator<<=(BigInt &lhs, T rhs) noexcept { lhs = lhs << rhs; return lhs; }
-    friend constexpr BigInt & operator>>=(BigInt &lhs, T rhs) noexcept { lhs = lhs >> rhs; return lhs; }
-    friend constexpr BigInt & operator*=(BigInt &lhs, T rhs) noexcept { lhs = lhs * rhs; return lhs; }
-    friend constexpr BigInt & operator/=(BigInt &lhs, T rhs) noexcept { lhs = lhs / rhs; return lhs; }
-    friend constexpr BigInt & operator%=(BigInt &lhs, T rhs) noexcept { lhs = lhs % rhs; return lhs; }
+    friend constexpr BigInt & operator+=(BigInt &lhs,  std::integral auto rhs) noexcept { lhs = lhs + rhs; return lhs; }
+    friend constexpr BigInt & operator-=(BigInt &lhs,  std::integral auto rhs) noexcept { lhs = lhs - rhs; return lhs; }
+    friend constexpr BigInt & operator<<=(BigInt &lhs, std::integral auto rhs) noexcept { lhs = lhs << rhs; return lhs; }
+    friend constexpr BigInt & operator>>=(BigInt &lhs, std::integral auto rhs) noexcept { lhs = lhs >> rhs; return lhs; }
+    friend constexpr BigInt & operator*=(BigInt &lhs,  std::integral auto rhs) noexcept { lhs = lhs * rhs; return lhs; }
+    friend constexpr BigInt & operator/=(BigInt &lhs,  std::integral auto rhs) noexcept { lhs = lhs / rhs; return lhs; }
+    friend constexpr BigInt & operator%=(BigInt &lhs,  std::integral auto rhs) noexcept { lhs = lhs % rhs; return lhs; }
 
     friend BigInt::Sign negate(BigInt::Sign sign) { return sign == Sign::Positive ? Sign::Negative : Sign::Positive; }
     friend void negate(BigInt &other) {
       other._sign = negate(other._sign);
+    }
+
+    friend void print(std::ostream &out, BigInt<T> &value) {
+      auto [res, rem] = divmod(value, 10);
+      value = std::move(res);
+      if (!is_neutral(value)) {
+        print(out, value);
+      }
+      out << (char)('0' + rem);
     }
 
     friend std::ostream & operator<<(std::ostream &out, const BigInt<T> &value) noexcept {
@@ -388,11 +453,7 @@ namespace mr {
         out << '-';
         negate(copy);
       }
-      while (!is_neutral(copy)) {
-        auto [res, rem] = divmod(copy, 10);
-        out << ('0' + rem);
-        copy = std::move(res);
-      }
+      print(out, copy);
       return out;
     }
   };

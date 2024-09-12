@@ -109,7 +109,10 @@ namespace mr {
       const T & operator[](std::size_t i) const { return _data[i]; }
 
       bool operator<(const OwningSpan<T> &other) const noexcept {
-        return std::memcmp(_data, other._data, std::min(_capacity, other._capacity)) < 0;
+        if (_capacity != other._capacity) {
+          return _capacity < other._capacity;
+        }
+        return std::memcmp(_data, other._data, _capacity * sizeof(T));
       }
     };
 }

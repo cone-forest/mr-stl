@@ -131,11 +131,18 @@ namespace mr {
       }
 
       bool operator<(const Vector<T> &other) const noexcept {
-        return _size < other._size || (_size == other._size && _data < other._data);
+        if (_size != other._size) {
+          return _size < other._size;
+        }
+
+        return std::memcmp(_data.data(), other.data(), _size * sizeof(T)) < 0;
       }
 
       bool operator==(const Vector<T> &other) const noexcept {
-        return !(*this < other) && !(other < *this);
+        if (_size != other._size) {
+          return false;
+        }
+        return std::memcmp(_data.data(), other.data(), _size * sizeof(T)) == 0;
       }
 
     private:
