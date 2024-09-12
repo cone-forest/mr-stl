@@ -76,7 +76,7 @@ namespace mr {
         requires (std::is_constructible_v<T, Args...>)
       Vector & emplace_at(std::size_t index, Args ...args) {
         emplace_back();
-        std::memmove(_data + index, _data + index + 1, size() - index - 1);
+        std::memmove(data() + index, data() + index + 1, size() - index - 1);
         _data[index] = std::move(T(args...));
         return *this;
       }
