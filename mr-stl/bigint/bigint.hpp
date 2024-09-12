@@ -10,7 +10,7 @@ namespace mr {
   template <std::integral T>
   std::tuple<T, T> multiply(T a, T b) {
     constexpr std::uint64_t halfbitsize = sizeof(T) * 4;
-    constexpr std::uint64_t lomask = (1 << halfbitsize) - 1;
+    constexpr std::uint64_t lomask = (1ull << halfbitsize) - 1;
     constexpr std::uint64_t himask = lomask << halfbitsize;
     constexpr auto lo = [=](T e) -> T { return e & lomask; };
     constexpr auto hi = [=](T e) -> T { return (e >> halfbitsize) & lomask; };
@@ -178,13 +178,15 @@ namespace mr {
     }
 
     friend BigInt operator<<(const BigInt<T> &lhs, std::size_t rhs) {
-      assert(rhs < sizeof(T) * 8);
-
       T carry = 0;
       BigInt<T> copy = lhs;
+      while (rhs >= sizeof(T) * 8) {
+        copy._value.emplace_at((size_t)0, (T)0);
+        rhs -= sizeof(T) * 8;
+      }
       for (int i = 0; i < lhs.size(); i++) {
         copy[i] = (lhs[i] << rhs) | carry;
-        carry = (lhs[i] >> (sizeof(T) * 8 - rhs)) & ((1 << rhs) - 1);
+        carry = (lhs[i] >> (sizeof(T) * 8 - rhs)) & ((1ull << rhs) - 1);
       }
 
       if (carry != 0) {
@@ -201,7 +203,7 @@ namespace mr {
       BigInt<T> copy = lhs;
       for (int i = lhs.size() - 1; i >= 0; i--) {
         copy[i] = (lhs[i] >> rhs) + carry;
-        carry = (lhs[i] & ((1 << rhs) - 1)) << (sizeof(T) * 8 - rhs);
+        carry = (lhs[i] & ((1ull << rhs) - 1)) << (sizeof(T) * 8 - rhs);
       }
 
       copy.trim();
@@ -311,21 +313,13 @@ namespace mr {
         return lhs;
       }
 
-      constexpr T bm = 0b100000000;
-
-      BigInt<T> x1 = lhs >> 8;
-      BigInt<T> y1 = rhs >> 8;
-      T x0 = lhs[0] & (bm - 1);
-      T y0 = rhs[0] & (bm - 1);
-
-      T z0 = x0 * y0;
-      BigInt<T> z1 = x1 * y0 + y1 * x0;
-      BigInt<T> z2 = x1 * y1;
-      BigInt<T> res = (z2 * bm + z1) * bm + z0;
+      BigInt<T> res;
+      for (int i = 0; i < rhs.size(); i++) {
+        res += (lhs * rhs[i]) << (sizeof(T) * 8 * i);
+      }
       res._sign = lhs._sign == rhs._sign ? Sign::Positive : Sign::Negative;
-      return std::move(res.trim());
+      return std::move(res);
     }
-
 
     friend constexpr BigInt<T> operator*(const BigInt<T> &lhs, T rhs) {
       size_t size = lhs.size();
