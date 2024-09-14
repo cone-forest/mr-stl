@@ -184,6 +184,9 @@ namespace mr {
         copy._value.emplace_at((size_t)0, (T)0);
         rhs -= sizeof(T) * 8;
       }
+      if (rhs == 0) {
+        return std::move(copy);
+      }
       for (int i = 0; i < lhs.size(); i++) {
         copy[i] = (lhs[i] << rhs) | carry;
         carry = (lhs[i] >> (sizeof(T) * 8 - rhs)) & ((1ull << rhs) - 1);
