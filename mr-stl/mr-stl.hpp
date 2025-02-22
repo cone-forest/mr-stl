@@ -9,7 +9,7 @@
 // #include "vector/amortized_vector.hpp"
 #include "string/string.hpp"
 #include "hashmap/hashmap.hpp"
-// #include "graph/graph.hpp"
+#include "graph/graph.hpp"
 #include "algorithm/algorithm.hpp"
 
 #endif // __mr_stl_hpp__
