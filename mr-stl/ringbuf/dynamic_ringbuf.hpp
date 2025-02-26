@@ -31,7 +31,7 @@ namespace mr {
         }
 
         _data[_tail] = std::move(value);
-        _tail = (_tail + 1) % _data.capacity();
+        _tail = (_tail + 1) % capacity();
         _size++;
 
         return true;
@@ -42,7 +42,7 @@ namespace mr {
           resize(_head + _size);
         }
 
-        _head = (_head + _data.capacity() - 1) % _data.capacity();
+        _head = (_head + capacity() - 1) % capacity();
         _data[_head] = std::move(value);
         _size++;
 
@@ -54,10 +54,10 @@ namespace mr {
           return std::nullopt;
         }
 
-        _head = (_head + 1) % _data.size();
+        _head = (_head + 1) % size();
         _size--;
 
-        return std::move(_data[(_head + _data.capacity() - 1) % _data.capacity()]);
+        return std::move(_data[(_head + capacity() - 1) % capacity()]);
       }
 
       constexpr std::optional<T> pop_back() noexcept {
@@ -65,30 +65,30 @@ namespace mr {
           return std::nullopt;
         }
 
-        _tail = (_tail + _data.capacity() - 1) % _data.capacity();
+        _tail = (_tail + capacity() - 1) % capacity();
         _size--;
 
-        return std::move(_data[(_tail + 1) % _data.capacity()]);
+        return std::move(_data[_tail]);
       }
 
       const T & operator[](std::size_t index) const {
-        return _data[(_head + index) % _size];
+        return _data[(_head + index) % capacity()];
       }
 
       T & operator[](std::size_t index) {
-        return _data[(_head + index) % _size];
+        return _data[(_head + index) % capacity()];
       }
 
       std::optional<T> at(std::size_t index) const noexcept {
         if (_size != 0) [[likely]] {
-          return _data[(_head + index) % _size];
+          return _data[(_head + index) % capacity()];
         }
         return std::nullopt;
       }
 
       constexpr std::size_t size() const noexcept { return _size; }
 
-      constexpr std::size_t capacity() const noexcept { return _data.capacity(); }
+      constexpr std::size_t capacity() const noexcept { return _data.size(); }
 
       constexpr bool empty() const noexcept { return _size == 0; }
 
@@ -105,5 +105,5 @@ namespace mr {
                                   begin(_data) + _head + _size - _tail);
         _tail = _head + _size;
       }
-    };
+};
 }  // namespace mr
