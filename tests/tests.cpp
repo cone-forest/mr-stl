@@ -1,8 +1,11 @@
 #include "mr-stl/mr-stl.hpp"
+#include "mr-stl/ringbuf/dynamic_ringbuf.hpp"
 #include <random>
 
-// #define ENABLE_TESTS
-#define ENABLE_BENCHMARK
+using namespace mr;
+
+#define ENABLE_TESTS
+// #define ENABLE_BENCHMARK
 
 #ifdef ENABLE_TESTS
 #include "gtest/gtest.h"
@@ -204,6 +207,129 @@ TEST(GraphTest, LargeGraph) {
     for (std::size_t i = 0; i < num_nodes; ++i) {
         EXPECT_EQ((*path)[i], i);
     }
+}
+
+TEST(DynamicRingBufferTest, DefaultConstructor) {
+    DynamicRingBuffer<int> buffer;
+    EXPECT_EQ(buffer.size(), 0);
+    EXPECT_TRUE(buffer.empty());
+    EXPECT_EQ(buffer.capacity(), 0);
+}
+
+TEST(DynamicRingBufferTest, PushBackIncreasesSize) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    EXPECT_EQ(buffer.size(), 1);
+    EXPECT_FALSE(buffer.empty());
+    buffer.push_back(2);
+    EXPECT_EQ(buffer.size(), 2);
+}
+
+TEST(DynamicRingBufferTest, PushBackResizesWhenFull) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    buffer.push_back(3); // Capacity becomes 3
+    EXPECT_TRUE(buffer.full());
+
+    buffer.push_back(4); // Trigger resize
+    EXPECT_GT(buffer.capacity(), 3);
+    EXPECT_EQ(buffer.size(), 4);
+}
+
+TEST(DynamicRingBufferTest, PushFrontAddsToFront) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1); // Ensure capacity is non-zero
+    buffer.push_front(2);
+    EXPECT_EQ(buffer.size(), 2);
+    EXPECT_EQ(buffer[0], 2);
+    EXPECT_EQ(buffer[1], 1);
+}
+
+TEST(DynamicRingBufferTest, PopFrontReturnsCorrectElement) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    auto val = buffer.pop_front();
+    ASSERT_TRUE(val.has_value());
+    EXPECT_EQ(*val, 1);
+    EXPECT_EQ(buffer.size(), 1);
+}
+
+TEST(DynamicRingBufferTest, PopBackReturnsCorrectElement) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    auto val = buffer.pop_back();
+    ASSERT_TRUE(val.has_value());
+    EXPECT_EQ(*val, 2);
+    EXPECT_EQ(buffer.size(), 1);
+}
+
+TEST(DynamicRingBufferTest, OperatorAccess) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    buffer.push_back(3);
+    EXPECT_EQ(buffer[0], 1);
+    EXPECT_EQ(buffer[1], 2);
+    EXPECT_EQ(buffer[2], 3);
+}
+
+TEST(DynamicRingBufferTest, AtMethod) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    auto elem0 = buffer.at(0);
+    auto elem1 = buffer.at(1);
+    ASSERT_TRUE(elem0.has_value());
+    ASSERT_TRUE(elem1.has_value());
+    EXPECT_EQ(*elem0, 1);
+    EXPECT_EQ(*elem1, 2);
+}
+
+TEST(DynamicRingBufferTest, FullAndEmpty) {
+    DynamicRingBuffer<int> buffer;
+    EXPECT_TRUE(buffer.empty());
+    buffer.push_back(1);
+    buffer.push_back(2);
+    buffer.push_back(3);
+    EXPECT_TRUE(buffer.full());
+    buffer.pop_front();
+    EXPECT_FALSE(buffer.full());
+}
+
+TEST(DynamicRingBufferTest, ResizePreservesElements) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    buffer.push_back(3);
+    buffer.resize(5);
+    EXPECT_EQ(buffer.size(), 3);
+    EXPECT_EQ(buffer[0], 1);
+    EXPECT_EQ(buffer[1], 2);
+    EXPECT_EQ(buffer[2], 3);
+}
+
+TEST(DynamicRingBufferTest, HeadAndTailPositions) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    EXPECT_EQ(buffer.head(), 0);
+    EXPECT_EQ(buffer.tail(), 1);
+    buffer.push_front(2);
+    EXPECT_EQ(buffer.head(), (buffer.capacity() - 1) % buffer.capacity());
+}
+
+TEST(DynamicRingBufferTest, WrapAroundBehavior) {
+    DynamicRingBuffer<int> buffer;
+    buffer.push_back(1);
+    buffer.push_back(2);
+    buffer.push_back(3); // Full, capacity 3
+    buffer.pop_front(); // Head becomes 1
+    buffer.push_back(4); // Tail wraps around
+    EXPECT_EQ(buffer[0], 2);
+    EXPECT_EQ(buffer[1], 3);
+    EXPECT_EQ(buffer[2], 4);
 }
 
 int main(int argc, char **argv) {
