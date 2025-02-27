@@ -98,12 +98,15 @@ namespace mr {
 
       constexpr size_t tail() const noexcept { return _tail; }
 
-      void resize(std::size_t new_size) {
-        _data.resize(new_size);
-        // NOTE: it's probably not worth it to move all data to the beginning
-        std::uninitialized_move_n(begin(_data), _head < _tail ? 0 : _tail,
-                                  begin(_data) + _head + _size - _tail);
-        _tail = _head + _size;
+      void resize(std::size_t new_capacity) {
+        mr::Vector<T> new_buffer;
+        new_buffer.resize(new_capacity);
+        for (std::size_t i = 0; i < _size; ++i) {
+          new_buffer[i] = (*this)[i];
+        }
+        _data = std::move(new_buffer);
+        _head = 0;
+        _tail = _size;
       }
-};
+    };
 }  // namespace mr
