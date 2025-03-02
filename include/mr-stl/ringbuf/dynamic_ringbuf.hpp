@@ -39,7 +39,7 @@ namespace mr {
 
       constexpr bool push_front(T value) {
         if (full()) {
-          resize(_head + _size);
+          resize(_head + _size + 3);
         }
 
         _head = (_head + capacity() - 1) % capacity();
