@@ -7,10 +7,10 @@ namespace mr {
   template <typename T, std::size_t S>
     struct StaticRingBuffer {
     private:
-      std::array<T, S> _data;
-      std::size_t _size;
-      std::size_t _head;
-      std::size_t _tail;
+      std::array<T, S> _data = {};
+      std::size_t _size = 0;
+      std::size_t _head = 0;
+      std::size_t _tail = 0;
 
     public:
       // default constructor
@@ -53,16 +53,16 @@ namespace mr {
       }
 
       const T & operator[](std::size_t index) const {
-        return _data[(_head + index) % _size];
+        return _data[(_head + index) % S];
       }
 
       T & operator[](std::size_t index) {
-        return _data[(_head + index) % _size];
+        return _data[(_head + index) % S];
       }
 
       std::optional<T> at(std::size_t index) const noexcept {
-        if (_size != 0) [[likely]] {
-          return _data[(_head + index) % _size];
+        if (index < _size) [[likely]] {
+          return _data[(_head + index) % S];
         }
         return std::nullopt;
       }
