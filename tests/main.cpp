@@ -324,3 +324,85 @@ TEST(DynamicRingBufferTest, WrapAroundBehavior) {
     EXPECT_EQ(buffer[1], 3);
     EXPECT_EQ(buffer[2], 4);
 }
+
+TEST(StaticRingBufferTest, InitialState) {
+  mr::StaticRingBuffer<int, 5> buffer;
+  EXPECT_TRUE(buffer.empty());
+  EXPECT_EQ(buffer.size(), 0);
+  EXPECT_FALSE(buffer.full());
+}
+
+TEST(StaticRingBufferTest, PushPopSingleElement) {
+  mr::StaticRingBuffer<int, 5> buffer;
+  EXPECT_TRUE(buffer.push(42));
+  EXPECT_EQ(buffer.size(), 1);
+  auto val = buffer.pop();
+  ASSERT_TRUE(val.has_value());
+  EXPECT_EQ(*val, 42);
+  EXPECT_TRUE(buffer.empty());
+}
+
+TEST(StaticRingBufferTest, PushUntilFull) {
+  mr::StaticRingBuffer<int, 3> buffer;
+  EXPECT_TRUE(buffer.push(1));
+  EXPECT_TRUE(buffer.push(2));
+  EXPECT_TRUE(buffer.push(3));
+  EXPECT_TRUE(buffer.full());
+  EXPECT_FALSE(buffer.push(4)); // Should fail
+}
+
+TEST(StaticRingBufferTest, PopFromEmpty) {
+  mr::StaticRingBuffer<int, 3> buffer;
+  auto val = buffer.pop();
+  EXPECT_FALSE(val.has_value());
+}
+
+TEST(StaticRingBufferTest, AccessElements) {
+  mr::StaticRingBuffer<int, 5> buffer;
+  buffer.push(1);
+  buffer.push(2);
+  buffer.push(3);
+  EXPECT_EQ(buffer[0], 1);
+  EXPECT_EQ(buffer[1], 2);
+  EXPECT_EQ(buffer[2], 3);
+  buffer.pop();
+  buffer.push(4);
+  EXPECT_EQ(buffer[0], 2);
+  EXPECT_EQ(buffer[1], 3);
+  EXPECT_EQ(buffer[2], 4);
+}
+
+TEST(StaticRingBufferTest, WrapAround) {
+  mr::StaticRingBuffer<int, 3> buffer;
+  buffer.push(1);
+  buffer.push(2);
+  buffer.pop(); // head becomes 1
+  buffer.push(3); 
+  buffer.push(4); // tail wraps to 0
+  EXPECT_EQ(buffer[0], 2);
+  EXPECT_EQ(buffer[1], 3);
+  EXPECT_EQ(buffer[2], 4);
+}
+
+TEST(StaticRingBufferTest, AtFunctionBoundsCheck) {
+  mr::StaticRingBuffer<int, 3> buffer;
+  buffer.push(1);
+  buffer.push(2);
+  EXPECT_TRUE(buffer.at(0).has_value());
+  EXPECT_EQ(*buffer.at(0), 1);
+  EXPECT_TRUE(buffer.at(1).has_value());
+  EXPECT_FALSE(buffer.at(2).has_value()); // size=2, index 2 invalid
+}
+
+TEST(StaticRingBufferTest, IndexingWithHeadNotZero) {
+  mr::StaticRingBuffer<int, 5> buffer;
+  // Fill partially and manipulate head
+  for (int i = 0; i < 3; ++i) buffer.push(i);
+  buffer.pop(); // head=1
+  buffer.pop(); // head=2
+  buffer.push(3);
+  buffer.push(4);
+  EXPECT_EQ(buffer[0], 2);
+  EXPECT_EQ(buffer[1], 3);
+  EXPECT_EQ(buffer[2], 4);
+}
