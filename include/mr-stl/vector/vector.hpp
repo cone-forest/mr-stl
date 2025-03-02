@@ -76,13 +76,12 @@ namespace mr {
         requires (std::is_constructible_v<T, Args...>)
       Vector & emplace_at(std::size_t index, Args ...args) {
         emplace_back();
-        T tmp = std::move(_data[index]);
-        for (int i = index + 1; i < size(); i++) {
-          T next = std::move(_data[i]);
-          _data[i] = std::move(tmp);
-          tmp = std::move(next);
+
+        for (int i = size() - 1; i > static_cast<int>(index); --i) {
+          _data[i] = std::move(_data[i - 1]);
         }
         _data[index] = std::move(T(args...));
+
         return *this;
       }
 
@@ -93,6 +92,9 @@ namespace mr {
       }
 
       Vector & remove(std::size_t id) {
+        if (id >= _size) {
+          return *this;
+        }
         _size--;
         for (std::size_t i = id; i < _size; i++) {
           _data[i] = _data[i + 1];
