@@ -54,7 +54,7 @@ namespace mr {
           return std::nullopt;
         }
 
-        _head = (_head + 1) % size();
+        _head = (_head + 1) % capacity();
         _size--;
 
         return std::move(_data[(_head + capacity() - 1) % capacity()]);
@@ -80,7 +80,7 @@ namespace mr {
       }
 
       std::optional<T> at(std::size_t index) const noexcept {
-        if (_size != 0) [[likely]] {
+        if (index < _size) [[likely]] {
           return _data[(_head + index) % capacity()];
         }
         return std::nullopt;
@@ -88,7 +88,7 @@ namespace mr {
 
       constexpr std::size_t size() const noexcept { return _size; }
 
-      constexpr std::size_t capacity() const noexcept { return _data.size(); }
+      constexpr std::size_t capacity() const noexcept { return _data.capacity(); }
 
       constexpr bool empty() const noexcept { return _size == 0; }
 
