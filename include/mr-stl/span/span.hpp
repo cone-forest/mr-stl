@@ -76,8 +76,7 @@ namespace mr {
           std::memcpy(_data, data, _capacity * sizeof(T));
         }
       OwningSpan(T *data, std::size_t size) noexcept :
-        _data(new (std::nothrow) T[size]), _capacity(size) {
-          std::memcpy(_data, data, _capacity * sizeof(T));
+        _data(data), _capacity(size) {
         }
 
       template <typename ...Args>

@@ -12,8 +12,8 @@ project(
 )
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(MR_STL_ENABLE_BENCHMARK "Whether benchmarks are downloaded and build"    OFF)
-option(MR_STL_ENABLE_TESTING   "Whether tests are downloaded and build"         OFF)
+option(MR_STL_ENABLE_BENCHMARK "Whether benchmarks are downloaded and build"    ON)
+option(MR_STL_ENABLE_TESTING   "Whether tests are downloaded and build"         ON)
 option(MR_STL_PRESET_OPTIMIZED "Whether optimization flags are enabled at all"  OFF)
 option(MR_STL_PRESET_BENCHMARK "Whether maximum optimization flags are enabled" OFF)
 option(MR_STL_PRESET_PROFILING "Whether profiling flags are enabled"            OFF)

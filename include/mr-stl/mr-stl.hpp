@@ -13,5 +13,6 @@
 #include "algorithm/algorithm.hpp"
 #include "ringbuf/dynamic_ringbuf.hpp"
 #include "ringbuf/static_ringbuf.hpp"
+#include "splaytree/splaytree.hpp"
 
 #endif // __mr_stl_hpp__

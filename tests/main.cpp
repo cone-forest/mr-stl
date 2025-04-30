@@ -69,6 +69,17 @@ TEST(VectorSortTest, VectorSortTest) {
   EXPECT_EQ(vec, vec_res);
 }
 
+TEST(VectorSortTest, VectorCountingSortTest) {
+  mr::Vector<uint32_t> vec {
+    93, 2, 46, 41, 24, 15, 83, 19, 29, 73, 99, 92, 79, 23, 13, 34, 40, 5, 90, 91, 7, 80, 55, 43, 31, 48, 96, 33, 17, 97, 1, 56, 9, 76, 58, 59, 57, 11, 82, 32, 22, 71, 88, 68, 66, 63, 50, 72, 44, 77, 64, 69, 94, 36, 12, 87, 37, 18, 16, 49, 51, 78, 84, 62, 60, 47, 35, 21, 89, 98, 10, 65, 28, 45, 3, 14, 25, 39, 95, 20, 81, 54, 70, 74, 42, 100, 67, 8, 38, 30, 75, 86, 61, 4, 6, 26, 52, 27, 53, 85
+  };
+  mr::Vector<uint32_t> vec_res {
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100
+  };
+  mr::counting_sort(vec.data(), vec.size());
+  EXPECT_EQ(vec, vec_res);
+}
+
 TEST(GraphTest, AddNodesAndEdges) {
     mr::Graph<int> graph;
     graph.add_node(0);
@@ -186,18 +197,18 @@ TEST(GraphTest, MultiplePaths) {
 
 TEST(GraphTest, LargeGraph) {
     mr::Graph<int> graph;
-    const std::size_t num_nodes = 100;
-    for (std::size_t i = 0; i < num_nodes; ++i) {
+    const int num_nodes = 100;
+    for (int i = 0; i < num_nodes; ++i) {
         graph.add_node(i);
     }
-    for (std::size_t i = 0; i < num_nodes - 1; ++i) {
+    for (int i = 0; i < num_nodes - 1; ++i) {
         graph.add_edge(i, i + 1); // Linear chain
     }
 
     auto path = graph.find_path(0, num_nodes - 1);
     ASSERT_TRUE(path.has_value());
     ASSERT_EQ(path->size(), num_nodes);
-    for (std::size_t i = 0; i < num_nodes; ++i) {
+    for (int i = 0; i < num_nodes; ++i) {
         EXPECT_EQ((*path)[i], i);
     }
 }
